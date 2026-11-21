@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventario y Ventas | Tienda / Taller</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-soft: #162032;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --danger: #ef4444;
+      --warning: #eab308;
+      --success: #22c55e;
+      --border: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 2rem 1rem;
+      line-height: 1.5;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { font-size: 2rem; margin-bottom: 0.35rem; }
+    header p { color: var(--muted); font-size: 0.95rem; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .metric-label { color: var(--muted); font-size: 0.85rem; }
+    .metric-value { font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem; }
+    .metric-value.ok { color: var(--success); }
+    .metric-value.alert { color: var(--warning); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-group { margin-bottom: 0.9rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.3rem; }
+
+    input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    input:focus { outline: none; border-color: var(--accent); }
+
+    button {
+      padding: 0.55rem 0.85rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background-color 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.7rem;
+      background: var(--accent);
+      color: #082f49;
+      font-size: 0.95rem;
+      margin-top: 0.25rem;
+    }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+
+    .btn-sell { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-sell:hover { background: var(--danger); color: #fff; }
+
+    .btn-restock { background: rgba(34, 197, 94, 0.16); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .btn-restock:hover { background: var(--success); color: #052e16; }
+
+    .productos-lista { display: flex; flex-direction: column; gap: 0.85rem; }
+
+    .producto-item {
+      background: var(--card-soft);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .producto-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .codigo { font-size: 0.78rem; color: var(--accent); font-weight: 700; }
+    .nombre { font-size: 1rem; font-weight: 600; }
+    .detalle { font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem; }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+    }
+    .badge.ok { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+    .badge.bajo { background: rgba(234, 179, 8, 0.2); color: #fde047; }
+
+    .acciones { display: flex; gap: 0.45rem; }
+
+    .log {
+      margin-top: 1.5rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+    .log h3 { font-size: 0.95rem; color: var(--muted); margin-bottom: 0.5rem; }
+    #mensaje-estado { font-size: 0.9rem; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Inventario y Ventas</h1>
+      <p>Interfaz web conectada a la lógica de gestión de productos, stock, ventas y reabastecimiento</p>
+    </header>
+
+    <section class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">Valor Total del Inventario</div>
+        <div id="valor-total" class="metric-value ok">$0.00</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Productos Registrados</div>
+        <div id="total-productos" class="metric-value">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Alertas de Stock Bajo</div>
+        <div id="total-bajo-stock" class="metric-value alert">0</div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Nuevo Producto</h2>
+        <form id="form-producto">
+          <div class="form-group">
+            <label for="codigo">Código</label>
+            <input id="codigo" type="text" placeholder="Ej. REF-04" required />
+          </div>
+          <div class="form-group">
+            <label for="nombre">Nombre / Refacción</label>
+            <input id="nombre" type="text" placeholder="Ej. Balatas Delanteras" required />
+          </div>
+          <div class="form-group">
+            <label for="precio">Precio Unitario ($)</label>
+            <input id="precio" type="number" step="0.01" min="0.01" placeholder="Ej. 350.00" required />
+          </div>
+          <div class="form-group">
+            <label for="stock">Stock Inicial</label>
+            <input id="stock" type="number" min="0" value="1" required />
+          </div>
+          <div class="form-group">
+            <label for="stockMinimo">Stock Mínimo (alerta)</label>
+            <input id="stockMinimo" type="number" min="0" value="3" required />
+          </div>
+          <button type="submit" class="btn-primary">Agregar al Inventario</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Productos en Inventario</h2>
+        <div id="lista-productos" class="productos-lista"></div>
+      </section>
+    </div>
+
+    <section class="log">
+      <h3>Último movimiento</h3>
+      <div id="mensaje-estado">Listo para operar.</div>
+    </section>
+  </div>
+
+  <script>
+    let inventario = [
+      { codigo: "REF-01", nombre: "Filtro de Aceite", precio: 250.0, stock: 8, stockMinimo: 3 },
+      { codigo: "REF-02", nombre: "Bujía Platino", precio: 120.5, stock: 2, stockMinimo: 5 },
+      { codigo: "REF-03", nombre: "Aceite Sintético 5W30", precio: 480.0, stock: 15, stockMinimo: 4 }
+    ];
+
+    const listaEl = document.getElementById("lista-productos");
+    const valorTotalEl = document.getElementById("valor-total");
+    const totalProductosEl = document.getElementById("total-productos");
+    const totalBajoStockEl = document.getElementById("total-bajo-stock");
+    const mensajeEl = document.getElementById("mensaje-estado");
+    const formEl = document.getElementById("form-producto");
+
+    function renderizar() {
+      listaEl.innerHTML = "";
+
+      let valorTotal = 0;
+      let alertasBajoStock = 0;
+
+      inventario.forEach((prod, index) => {
+        valorTotal += prod.precio * prod.stock;
+        const esBajo = prod.stock <= prod.stockMinimo;
+        if (esBajo) alertasBajoStock++;
+
+        const item = document.createElement("div");
+        item.className = "producto-item";
+        item.innerHTML = `
+          <div>
+            <div class="producto-top">
+              <span class="codigo">${prod.codigo}</span>
+              <span class="nombre">${prod.nombre}</span>
+              <span class="badge ${esBajo ? "bajo" : "ok"}">
+                ${esBajo ? "STOCK BAJO" : "STOCK OK"}
+              </span>
+            </div>
+            <div class="detalle">
+              Precio: $${prod.precio.toFixed(2)} | Stock: <strong>${prod.stock}</strong> (Mínimo: ${prod.stockMinimo})
+            </div>
+          </div>
+          <div class="acciones">
+            <button class="btn-sell" onclick="venderUnidad(${index})">Vender 1</button>
+            <button class="btn-restock" onclick="reabastecerUnidad(${index}, 5)">+5 Stock</button>
+          </div>
+        `;
+        listaEl.appendChild(item);
+      });
+
+      valorTotalEl.textContent = `$${valorTotal.toFixed(2)}`;
+      totalProductosEl.textContent = inventario.length;
+      totalBajoStockEl.textContent = alertasBajoStock;
+    }
+
+    function venderUnidad(index) {
+      const prod = inventario[index];
+      if (!prod) return;
+      if (prod.stock <= 0) {
+        mensajeEl.textContent = `Sin stock disponible para ${prod.nombre} (${prod.codigo}).`;
+        return;
+      }
+      prod.stock -= 1;
+      mensajeEl.textContent = `Venta de 1 x ${prod.nombre} por $${prod.precio.toFixed(2)} (Stock restante: ${prod.stock}).`;
+      renderizar();
+    }
+
+    function reabastecerUnidad(index, cantidad) {
+      const prod = inventario[index];
+      if (!prod) return;
+      prod.stock += cantidad;
+      mensajeEl.textContent = `Entrada de +${cantidad} en ${prod.nombre} (Stock actual: ${prod.stock}).`;
+      renderizar();
+    }
+
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const codigo = document.getElementById("codigo").value.trim().toUpperCase();
+      const nombre = document.getElementById("nombre").value.trim();
+      const precio = parseFloat(document.getElementById("precio").value);
+      const stock = parseInt(document.getElementById("stock").value, 10);
+      const stockMinimo = parseInt(document.getElementById("stockMinimo").value, 10);
+
+      if (!codigo || !nombre || isNaN(precio) || isNaN(stock) || isNaN(stockMinimo)) return;
+
+      const existe = inventario.some((p) => p.codigo.toUpperCase() === codigo);
+      if (existe) {
+        mensajeEl.textContent = `Ya existe un producto con el código ${codigo}.`;
+        return;
+      }
+
+      inventario.push({ codigo, nombre, precio, stock, stockMinimo });
+      mensajeEl.textContent = `Producto agregado: [${codigo}] ${nombre}.`;
+      formEl.reset();
+      document.getElementById("stock").value = 1;
+      document.getElementById("stockMinimo").value = 3;
+      renderizar();
+    });
+
+    renderizar();
+  </script>
+</body>
+</html>
